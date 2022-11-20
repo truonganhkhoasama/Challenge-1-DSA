@@ -1,62 +1,41 @@
 #include "Header.h"
 
-string createString(vector<char> a)
+vector<int> LZWCompressor(string inputdata, map<string, int>& Dictionary)
 {
-    string key = "";
-    for (int i = 0; i < a.size(); i++)
+    vector<int> code; //Initialse integer vector to contain encoded code
+
+    int index = 256; //Values from 0 to FF belong to ASCII table and present sets of charater that has only one character
+                    // Values from 100 are thus used to present sets of character that has more than one character
+
+    string keyin; //used to form new words in dictionary
+    string keyout; //used to input into encoded data
+
+    for (int i = 0; i <= inputdata.size(); i++)
     {
-        key.push_back(a[i]);
-    }
-    return key;
-}
+        keyin.push_back(inputdata[i]); //Input each character of inputdata
 
-vector<int> LZWCompressor(string a, map<string, int>& Dictionary)
-{
-    vector<int> code; //Initialse vector to contain compressed code
-    vector<char> charvec; //Vector containing characters to form string
-
-    int index = 256; //Values from 0 to FF belong to ASCII set and present set that has only one character
-
-    string keyin;
-    string keyout;
-
-    for (int i = 0; i <= a.size(); i++)
-    {
-        charvec.push_back(a[i]);
-        keyin = createString(charvec);
-
-        if (keyin.length() > 1)
+        if (keyin.length() > 1) //if keyin has more than 1 character then decide whether to form a new word in dictionary
         {
-            if (Dictionary.count(keyin) == 0)
+            if (Dictionary.count(keyin) == 0) //Check if there exists already a same word in dictionary
             {
-                //Insert into Dictionary
+                //Add new word into Dictionary
                 if (keyin[keyin.length() - 1] != '\0')
                     Dictionary.insert(make_pair(keyin, index++));
 
-                //Take keyout
-                while (charvec.size() != 1)
-                {
-                    keyout.push_back(charvec[0]);
-                    charvec.erase(charvec.begin());
-                }
+                //Take keyout from keyin
+                keyout = keyin.substr(0, keyin.length() -1);
+                keyin.erase(0, keyin.length() - 1);
 
-                //Insert ASCII into Dictionary
-                //if (keyout.length() == 1)
-                //{
-                //    if (Dictionary.count(keyout) == 0)
-                //        Dictionary.insert(make_pair(keyout, int(keyout[0])));
-                //}
-
-                //Insert into CODE
+                //Insert data into code
                 if (keyout.length() == 1)
-                    code.push_back(int(keyout[0]));
+                    code.push_back(int(keyout[0])); //insert the ASCII value of the character
                 else
                 {
-                    auto it = Dictionary.find(keyout);
+                    auto it = Dictionary.find(keyout); //Look the word up in dictionary and
                     if (it != Dictionary.end())
-                        code.push_back(it->second);
+                        code.push_back(it->second);  //insert the corresponding integer value into code
                 }
-                keyout = "";
+                keyout = ""; //reset keyout
             }
         }
     }
@@ -65,53 +44,42 @@ vector<int> LZWCompressor(string a, map<string, int>& Dictionary)
 
 string LZWDecompressor(vector<int> code, map<int, string>& Dictionary)
 {
-    string res;
-    string PartialEntry;
-    int index = 256;
-    string decode;
+    string res; //output data
+    string PartialEntry; //string used to form new words
+
+    int index = 256; //Values from 0 to FF belong to ASCII table and present sets of charater that has only one character
+                    // Values from 100 are thus used to present sets of character that has more than one character
+
+    string decode; //used to grab each sets of character to insert into res
+
     for (int i = 0; i < code.size(); i++)
     {
-        if (code[i] < 256)
+        if (code[i] < 256) //if less than 100 then belong to ASCII table
         {
-            decode.push_back(char(code[i]));
+            decode.push_back(char(code[i])); 
             PartialEntry.push_back(char(code[i]));
         }
         else
         {
-            auto it = Dictionary.find(code[i]);
+            auto it = Dictionary.find(code[i]); //Look the number up in dictionary and
             if (it != Dictionary.end())
             {
-                decode = it->second;
-                PartialEntry.push_back(it->second[0]);
+                decode = it->second; //insert the corresponding string value into decode
+                PartialEntry.push_back(it->second[0]); 
             }
         }
 
         if (PartialEntry.length() > 1)
         {
-            Dictionary.insert(make_pair(index++, PartialEntry));
+            Dictionary.insert(make_pair(index++, PartialEntry)); //Add new word into Dictionary
         }
 
-        res += decode;
+        res += decode; //attach decode to output data
         PartialEntry = decode;
         decode = "";
     }
 
     return res;
-}
-
-string toBinary(int n)
-{
-    string r;
-    while(n!=0)
-    {
-        r = (n % 2 == 0 ? "0" : "1") + r;
-        n/=2;
-    }
-    while(r.length()<10)
-    {
-        r = "0" + r;
-    }
-    return r;
 }
 
 long GetFileSize(std::string filename)
